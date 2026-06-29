@@ -17,7 +17,7 @@ COPY alembic ./alembic/
 RUN pip install --no-cache-dir .
 
 COPY docker/entrypoint-api.sh ./entrypoint-api.sh
-RUN chmod +x ./entrypoint-api.sh
+RUN sed -i 's/\r$//' ./entrypoint-api.sh && chmod +x ./entrypoint-api.sh
 
 EXPOSE 8000
 
