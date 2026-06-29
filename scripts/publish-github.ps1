@@ -1,7 +1,7 @@
 # One-time: authenticate GitHub CLI (portable binary in vault workspace)
-$gh = "..\..\..\..\..\..\..\04-workspace\gh-cli\gh.exe"
+$gh = "..\..\..\..\..\..\..\04-workspace\gh.exe"
 if (-not (Test-Path $gh)) {
-    $gh = "c:\Users\aniru\OneDrive\Documents\Everything\04-workspace\gh-cli\gh.exe"
+    $gh = "c:\Users\aniru\OneDrive\Documents\Everything\04-workspace\gh.exe"
 }
 
 Write-Host "Checking GitHub auth..."

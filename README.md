@@ -33,11 +33,24 @@ Python 3.12, FastAPI, PostgreSQL, Kafka (KRaft), Docker Compose, Prometheus, Gra
 
 ## Local development
 
-> Coming in D1 — `docker compose up` will boot the full stack.
-
 ```bash
 cp .env.example .env
 docker compose up --build
+```
+
+| Service    | URL                          |
+|------------|------------------------------|
+| API        | http://localhost:8000        |
+| API health | http://localhost:8000/health |
+| API ready  | http://localhost:8000/ready  |
+| Prometheus | http://localhost:9090        |
+| Grafana    | http://localhost:3000 (admin/admin) |
+
+Run unit tests locally:
+
+```bash
+pip install -e ".[dev]"
+PYTHONPATH=src pytest tests/
 ```
 
 ## Demo scenario
