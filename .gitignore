@@ -37,3 +37,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local-only bootstrap (not part of the product)
+scripts/publish-github.ps1
