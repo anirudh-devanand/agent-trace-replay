@@ -43,7 +43,7 @@ docker compose up --build
 | API        | http://localhost:8000        |
 | API health | http://localhost:8000/health |
 | API ready  | http://localhost:8000/ready  |
-| Prometheus | http://localhost:9090        |
+| Prometheus | http://localhost:9091        |
 | Grafana    | http://localhost:3000 (admin/admin) |
 
 Run unit tests locally:
