@@ -1,19 +1,36 @@
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Response
 from fastapi.responses import JSONResponse
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from sqlalchemy import text
 
+from api.routes.traces import router as traces_router
 from shared.config import get_settings
 from shared.db.session import engine
 from shared.kafka.health import check_kafka_connection
+from shared.kafka.producer import KafkaEventProducer
 
 REQUESTS_TOTAL = Counter("http_requests_total", "Total HTTP requests", ["endpoint", "method"])
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    settings = get_settings()
+    producer = KafkaEventProducer(settings)
+    app.state.kafka_producer = producer
+    yield
+    producer.flush()
+
 
 app = FastAPI(
     title="Agent Trace Replay Platform",
     version="0.1.0",
     description="Ingest tool-call traces and replay failures in isolated workers.",
+    lifespan=lifespan,
 )
+
+app.include_router(traces_router)
 
 
 @app.get("/health")

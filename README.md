@@ -46,11 +46,23 @@ docker compose up --build
 | Prometheus | http://localhost:9091        |
 | Grafana    | http://localhost:3000 (admin/admin) |
 
+### Trace ingestion (D2)
+
+```bash
+curl -X POST http://localhost:8000/v1/traces/ingest \
+  -H "Content-Type: application/json" \
+  -d @fixtures/sample_ingest.json
+```
+
+```bash
+curl http://localhost:8000/v1/traces/trace_demo_refund
+```
+
 Run unit tests locally:
 
 ```bash
 pip install -e ".[dev]"
-PYTHONPATH=src pytest tests/
+PYTHONPATH=src pytest tests/ -m "not integration"
 ```
 
 ## Demo scenario

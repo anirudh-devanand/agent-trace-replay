@@ -1,0 +1,31 @@
+{
+  "trace_id": "trace_demo_refund",
+  "agent_run_id": "run_001",
+  "source": "demo",
+  "events": [
+    {
+      "span_id": "span_1",
+      "parent_span_id": null,
+      "sequence": 1,
+      "event_type": "tool_call",
+      "tool_name": "customer_lookup",
+      "latency_ms": 80,
+      "status_code": 200,
+      "redacted_payload": { "customer_id": "cust_123" },
+      "idempotency_key": "trace_demo_refund:span_1:tool_call",
+      "event_ts": "2026-05-01T12:00:00.000Z"
+    },
+    {
+      "span_id": "span_2",
+      "parent_span_id": "span_1",
+      "sequence": 2,
+      "event_type": "tool_call",
+      "tool_name": "order_lookup",
+      "latency_ms": 95,
+      "status_code": 200,
+      "redacted_payload": { "order_id": "ord_456" },
+      "idempotency_key": "trace_demo_refund:span_2:tool_call",
+      "event_ts": "2026-05-01T12:00:01.000Z"
+    }
+  ]
+}
