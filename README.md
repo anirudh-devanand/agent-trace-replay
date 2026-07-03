@@ -19,13 +19,23 @@ This project uses a number of open-source tools:
 
 ## Architecture
 
-```text
-Client → API (FastAPI) → PostgreSQL
-                      ↘ Kafka → Normalizer → manifest
-                                ↘ Worker → replay steps + results
-Prometheus ← API / Normalizer / Worker
-Grafana ← Prometheus
+```mermaid
+flowchart LR
+    Client --> API
+    API --> Postgres[(PostgreSQL)]
+    API --> Kafka{Kafka}
+    Kafka --> Normalizer
+    Normalizer --> Postgres
+    Normalizer --> Kafka
+    Kafka --> Worker
+    Worker --> Postgres
+    API --> Prometheus
+    Normalizer --> Prometheus
+    Worker --> Prometheus
+    Prometheus --> Grafana
 ```
+
+Ingest and persistence are live today. The normalizer and replay worker paths are still being built.
 
 ## Installation
 
@@ -72,6 +82,48 @@ Run unit tests locally:
 pip install -e ".[dev]"
 PYTHONPATH=src pytest tests/ -m "not integration"
 ```
+
+## Sample output
+
+Ingest response (`POST /v1/traces/ingest`):
+
+```json
+{
+  "trace_id": "trace_demo_refund",
+  "accepted": 2,
+  "duplicates_ignored": 0,
+  "status": "accepted"
+}
+```
+
+Trace lookup (`GET /v1/traces/trace_demo_refund`):
+
+```json
+{
+  "trace_id": "trace_demo_refund",
+  "agent_run_id": "run_001",
+  "source": "demo",
+  "status": "open",
+  "events": [
+    {
+      "sequence": 1,
+      "event_type": "tool_call",
+      "tool_name": "customer_lookup",
+      "status_code": 200,
+      "latency_ms": 80
+    },
+    {
+      "sequence": 2,
+      "event_type": "tool_call",
+      "tool_name": "order_lookup",
+      "status_code": 200,
+      "latency_ms": 95
+    }
+  ]
+}
+```
+
+A replay walkthrough GIF will go here once the worker and failure injection paths are wired up.
 
 ## Final Thoughts
 
