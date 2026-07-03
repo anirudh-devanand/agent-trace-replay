@@ -1,23 +1,23 @@
 # Agent Trace Replay Platform
 
-Kafka-backed backend for ingesting AI agent tool-call traces, compiling replay manifests, and executing failure-injected mock replays in isolated workers.
+## Project Overview
 
-## Problem
+When AI agent workflows fail in production, logs show what happened but make it hard to **re-run the same tool-call sequence** under controlled conditions. This backend ingests agent traces, stores them in PostgreSQL, and publishes events through Kafka so downstream services can compile replay manifests and execute mock dependency replays with synthetic failures (timeouts, HTTP errors, malformed responses).
 
-Agent workflows fail intermittently due to tool-call ordering, retries, latency spikes, and malformed downstream responses. Logs show what happened; this platform lets engineers **re-run the recorded dependency sequence** under controlled conditions.
+Right now the ingest API, database schema, Kafka pipeline, and observability stack are in place. I'm still building out the normalizer, replay worker, and failure injection paths.
 
-## MVP scope (week 1)
+## Technology
 
-- REST trace ingestion (`POST /v1/traces/ingest`)
-- PostgreSQL storage + Kafka event pipeline
-- Trace normalization into replay manifests
-- Replay job scheduling and mock step execution
-- Synthetic failures: timeout, HTTP 500, malformed JSON, slow response
-- Replay results API + Prometheus metrics + Grafana dashboard
+This project uses a number of open-source tools:
 
-**Not in MVP:** live LLM replay, full payload capture, Kubernetes per-job isolation, OTLP ingest.
+- [FastAPI] — REST API and Prometheus metrics endpoint
+- [PostgreSQL] — trace and replay persistence
+- [Apache Kafka] — event pipeline between services
+- [Prometheus] — metrics collection
+- [Grafana] — dashboards
+- [Docker Compose] — local multi-service stack
 
-## Planned architecture
+## Architecture
 
 ```text
 Client → API (FastAPI) → PostgreSQL
@@ -27,13 +27,17 @@ Prometheus ← API / Normalizer / Worker
 Grafana ← Prometheus
 ```
 
-## Stack
+## Installation
 
-Python 3.12, FastAPI, PostgreSQL, Kafka (KRaft), Docker Compose, Prometheus, Grafana
+**Agent Trace Replay** was built with [Docker](https://www.docker.com/) and Docker Compose. Verify Docker is installed:
 
-## Local development
+```sh
+docker version
+```
 
-```bash
+From the project root:
+
+```sh
 cp .env.example .env
 docker compose up --build
 ```
@@ -41,34 +45,43 @@ docker compose up --build
 | Service    | URL                          |
 |------------|------------------------------|
 | API        | http://localhost:8000        |
-| API health | http://localhost:8000/health |
-| API ready  | http://localhost:8000/ready  |
+| Health     | http://localhost:8000/health |
+| Readiness  | http://localhost:8000/ready  |
 | Prometheus | http://localhost:9091        |
 | Grafana    | http://localhost:3000 (admin/admin) |
 
-### Trace ingestion (D2)
+## Usage
 
-```bash
+Ingest a sample trace:
+
+```sh
 curl -X POST http://localhost:8000/v1/traces/ingest \
   -H "Content-Type: application/json" \
   -d @fixtures/sample_ingest.json
 ```
 
-```bash
+Fetch a trace by ID:
+
+```sh
 curl http://localhost:8000/v1/traces/trace_demo_refund
 ```
 
 Run unit tests locally:
 
-```bash
+```sh
 pip install -e ".[dev]"
 PYTHONPATH=src pytest tests/ -m "not integration"
 ```
 
-## Demo scenario
+## Final Thoughts
 
-Refund support agent trace: `refund_policy` times out, retry returns malformed JSON, agent proceeds with bad state, workflow fails. Replay reproduces the first failing dependency step.
+This is still a work in progress. The target use case is debugging agent failures — for example, a refund support trace where `refund_policy` times out, a retry returns malformed JSON, and the workflow fails downstream. Once replay is wired up, the goal is to reproduce that first failing dependency step on demand.
 
-## License
+See [docs/LIMITATIONS.md](docs/LIMITATIONS.md) for what the platform does not do.
 
-MIT
+[FastAPI]: https://fastapi.tiangolo.com/
+[PostgreSQL]: https://www.postgresql.org/
+[Apache Kafka]: https://kafka.apache.org/
+[Prometheus]: https://prometheus.io/
+[Grafana]: https://grafana.com/
+[Docker Compose]: https://docs.docker.com/compose/
