@@ -10,12 +10,12 @@ Right now the ingest API, database schema, Kafka pipeline, and observability sta
 
 This project uses a number of open-source tools:
 
-- [FastAPI] — REST API and Prometheus metrics endpoint
-- [PostgreSQL] — trace and replay persistence
-- [Apache Kafka] — event pipeline between services
-- [Prometheus] — metrics collection
-- [Grafana] — dashboards
-- [Docker Compose] — local multi-service stack
+- [FastAPI] - REST API and Prometheus metrics endpoint
+- [PostgreSQL] - trace and replay persistence
+- [Apache Kafka] - event pipeline between services
+- [Prometheus] - metrics collection
+- [Grafana] - dashboards
+- [Docker Compose] - local multi-service stack
 
 ## Architecture
 
@@ -127,7 +127,7 @@ A replay walkthrough GIF will go here once the worker and failure injection path
 
 ## Final Thoughts
 
-This is still a work in progress. The target use case is debugging agent failures — for example, a refund support trace where `refund_policy` times out, a retry returns malformed JSON, and the workflow fails downstream. Once replay is wired up, the goal is to reproduce that first failing dependency step on demand.
+This is still a work in progress. The target use case is debugging agent failures, for example, a refund support trace where `refund_policy` times out, a retry returns malformed JSON, and the workflow fails downstream. Once replay is wired up, the goal is to reproduce that first failing dependency step on demand.
 
 See [docs/LIMITATIONS.md](docs/LIMITATIONS.md) for what the platform does not do.
 
