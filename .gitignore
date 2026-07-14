@@ -40,3 +40,6 @@ Thumbs.db
 
 # Local-only bootstrap (not part of the product)
 scripts/publish-github.ps1
+
+# OneDrive conflict copies
+*-anirudh.*

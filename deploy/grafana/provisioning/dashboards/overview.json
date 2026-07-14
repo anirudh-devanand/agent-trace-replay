@@ -2,23 +2,153 @@
   "annotations": { "list": [] },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": null,
   "links": [],
   "panels": [
     {
       "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 },
       "id": 1,
       "targets": [
         {
-          "expr": "sum(http_requests_total)",
-          "legendFormat": "total",
+          "expr": "sum(rate(trace_ingestion_total[1m])) by (status)",
+          "legendFormat": "ingest {{status}}",
           "refId": "A"
         }
       ],
-      "title": "HTTP Requests (API)",
+      "title": "Trace Ingest Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "sum(rate(normalizer_messages_total[1m])) by (status)",
+          "legendFormat": "normalizer {{status}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(normalizer_manifests_total[1m]))",
+          "legendFormat": "manifests",
+          "refId": "B"
+        }
+      ],
+      "title": "Normalizer Throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "sum(rate(replay_create_total[1m])) by (status)",
+          "legendFormat": "create {{status}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(replay_jobs_total[1m])) by (status)",
+          "legendFormat": "finished {{status}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Replay Jobs",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "sum(replay_steps_total) by (status)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Replay Steps by Status",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "sum(replay_injections_total) by (kind)",
+          "legendFormat": "{{kind}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Failure Injections by Kind",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(replay_step_latency_milliseconds_bucket[5m])) by (le))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(replay_step_latency_milliseconds_bucket[5m])) by (le))",
+          "legendFormat": "p95",
+          "refId": "B"
+        }
+      ],
+      "title": "Replay Step Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(replay_job_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "p95 duration",
+          "refId": "A"
+        }
+      ],
+      "title": "Replay Job Duration (p95)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
+      "id": 8,
+      "targets": [
+        {
+          "expr": "sum(http_requests_total)",
+          "legendFormat": "api http total",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(trace_ingestion_duplicates_total)",
+          "legendFormat": "ingest duplicates",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(normalizer_manifest_steps_total)",
+          "legendFormat": "manifest steps",
+          "refId": "C"
+        }
+      ],
+      "title": "Counters Snapshot",
       "type": "timeseries"
     }
   ],
@@ -28,5 +158,5 @@
   "time": { "from": "now-15m", "to": "now" },
   "title": "Agent Trace Replay — Overview",
   "uid": "agent-trace-replay-overview",
-  "version": 1
+  "version": 2
 }

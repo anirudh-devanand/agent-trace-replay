@@ -3,8 +3,12 @@ from prometheus_client import Counter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_db_session, get_kafka_producer, verify_api_key
+from api.services.manifest_query import ManifestNotFoundError, get_manifest_detail
+from api.services.replay_schedule import list_replays
 from api.services.trace_ingest import TraceNotFoundError, get_trace_detail, ingest_trace
 from shared.kafka.producer import KafkaEventProducer
+from shared.schemas.manifest import ManifestDetailResponse
+from shared.schemas.replay import ReplayListResponse
 from shared.schemas.trace import TraceDetailResponse, TraceIngestRequest, TraceIngestResponse
 
 router = APIRouter(prefix="/v1/traces", tags=["traces"])
@@ -36,6 +40,31 @@ async def ingest_trace_events(
         TRACE_INGESTION_TOTAL.labels(status="error").inc()
         await session.rollback()
         raise
+
+
+@router.get("/{trace_id}/manifest", response_model=ManifestDetailResponse)
+async def get_trace_manifest(
+    trace_id: str,
+    session: AsyncSession = Depends(get_db_session),
+    _: None = Depends(verify_api_key),
+) -> ManifestDetailResponse:
+    try:
+        return await get_manifest_detail(session, trace_id)
+    except ManifestNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="manifest not found",
+        ) from None
+
+
+@router.get("/{trace_id}/replays", response_model=ReplayListResponse)
+async def get_trace_replays(
+    trace_id: str,
+    limit: int = 20,
+    session: AsyncSession = Depends(get_db_session),
+    _: None = Depends(verify_api_key),
+) -> ReplayListResponse:
+    return await list_replays(session, trace_id=trace_id, limit=min(max(limit, 1), 100))
 
 
 @router.get("/{trace_id}", response_model=TraceDetailResponse)

@@ -1,0 +1,25 @@
+{
+  "trace_id": "trace_demo_refund",
+  "expected_status": "failed",
+  "expected_passed": 0,
+  "expected_failed": 2,
+  "first_failed_step_id": "span_1",
+  "steps": [
+    {
+      "step_order": 1,
+      "step_id": "span_1",
+      "tool_name": "customer_lookup",
+      "injection_kind": "timeout",
+      "expected_step_status": "failed",
+      "expected_error_type": "timeout"
+    },
+    {
+      "step_order": 2,
+      "step_id": "span_2",
+      "tool_name": "order_lookup",
+      "injection_kind": "malformed_json",
+      "expected_step_status": "failed",
+      "expected_error_type": "malformed_json"
+    }
+  ]
+}

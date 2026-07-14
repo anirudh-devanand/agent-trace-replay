@@ -21,6 +21,12 @@ class Settings(BaseSettings):
     replay_max_duration_sec: int = 300
     worker_id: str = "worker-1"
 
+    normalizer_consumer_group: str = "normalizer"
+    normalizer_metrics_port: int = 8001
+
+    worker_consumer_group: str = "replay-worker"
+    worker_metrics_port: int = 8002
+
     @property
     def database_url(self) -> str:
         return (

@@ -62,6 +62,41 @@ services:
       retries: 10
       start_period: 30s
 
+  normalizer:
+    build:
+      context: .
+      dockerfile: docker/normalizer/Dockerfile
+    env_file:
+      - .env.example
+    environment:
+      POSTGRES_HOST: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8001:8001"
+    depends_on:
+      api:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+    env_file:
+      - .env.example
+    environment:
+      POSTGRES_HOST: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      WORKER_ID: worker-1
+    ports:
+      - "8002:8002"
+    depends_on:
+      api:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
   prometheus:
     image: prom/prometheus:v2.55.1
     volumes:

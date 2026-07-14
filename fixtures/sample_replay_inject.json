@@ -1,0 +1,8 @@
+{
+  "trace_id": "trace_demo_refund",
+  "failure_injection": true,
+  "injections": [
+    {"kind": "timeout", "step_order": 1, "delay_ms": 50},
+    {"kind": "malformed_json", "step_order": 2}
+  ]
+}

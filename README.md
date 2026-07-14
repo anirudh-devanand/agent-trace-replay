@@ -4,18 +4,16 @@
 
 When AI agent workflows fail in production, logs show what happened but make it hard to **re-run the same tool-call sequence** under controlled conditions. This backend ingests agent traces, stores them in PostgreSQL, and publishes events through Kafka so downstream services can compile replay manifests and execute mock dependency replays with synthetic failures (timeouts, HTTP errors, malformed responses).
 
-Right now the ingest API, database schema, Kafka pipeline, and observability stack are in place. I'm still building out the normalizer, replay worker, and failure injection paths.
-
 ## Technology
 
 This project uses a number of open-source tools:
 
-- [FastAPI] - REST API and Prometheus metrics endpoint
-- [PostgreSQL] - trace and replay persistence
-- [Apache Kafka] - event pipeline between services
-- [Prometheus] - metrics collection
-- [Grafana] - dashboards
-- [Docker Compose] - local multi-service stack
+- [FastAPI] — REST API and Prometheus metrics endpoint
+- [PostgreSQL] — trace and replay persistence
+- [Apache Kafka] — event pipeline between services
+- [Prometheus] — metrics collection
+- [Grafana] — dashboards
+- [Docker Compose] — local multi-service stack
 
 ## Architecture
 
@@ -34,8 +32,6 @@ flowchart LR
     Worker --> Prometheus
     Prometheus --> Grafana
 ```
-
-Ingest and persistence are live today. The normalizer and replay worker paths are still being built.
 
 ## Installation
 
@@ -60,6 +56,20 @@ docker compose up --build
 | Prometheus | http://localhost:9091        |
 | Grafana    | http://localhost:3000 (admin/admin) |
 
+## Demo
+
+With the stack running:
+
+```sh
+# Linux / macOS / Git Bash
+bash scripts/demo.sh
+
+# Windows PowerShell
+./scripts/demo.ps1
+```
+
+The demo ingests `fixtures/sample_ingest.json`, waits for normalization, then runs the failure-injection path from `fixtures/sample_replay_inject.json` (`timeout` on step 1, `malformed_json` on step 2).
+
 ## Usage
 
 Ingest a sample trace:
@@ -76,11 +86,54 @@ Fetch a trace by ID:
 curl http://localhost:8000/v1/traces/trace_demo_refund
 ```
 
-Run unit tests locally:
+Fetch the compiled replay manifest:
+
+```sh
+curl http://localhost:8000/v1/traces/trace_demo_refund/manifest
+```
+
+Start a deterministic replay:
+
+```sh
+curl -X POST http://localhost:8000/v1/replays/ \
+  -H "Content-Type: application/json" \
+  -d '{"trace_id":"trace_demo_refund","failure_injection":false}'
+```
+
+Start a replay with failure injection (`timeout`, `http_500`, `malformed_json`, `slow`):
+
+```sh
+curl -X POST http://localhost:8000/v1/replays/ \
+  -H "Content-Type: application/json" \
+  -d @fixtures/sample_replay_inject.json
+```
+
+Fetch replay status:
+
+```sh
+curl http://localhost:8000/v1/replays/<replay_id>
+```
+
+List recent replays (optional `?trace_id=` and `?status=`):
+
+```sh
+curl "http://localhost:8000/v1/replays/?limit=10"
+curl "http://localhost:8000/v1/traces/trace_demo_refund/replays"
+```
+
+Open Grafana at http://localhost:3000 (`admin` / `admin`) and open **Agent Trace Replay — Overview**.
+
+## Tests
 
 ```sh
 pip install -e ".[dev]"
 PYTHONPATH=src pytest tests/ -m "not integration"
+```
+
+Integration and golden e2e tests need the Compose stack up:
+
+```sh
+PYTHONPATH=src pytest tests/ -m integration
 ```
 
 ## Sample output
@@ -96,38 +149,19 @@ Ingest response (`POST /v1/traces/ingest`):
 }
 ```
 
-Trace lookup (`GET /v1/traces/trace_demo_refund`):
+Failure-injection replay summary (from `scripts/demo.ps1` / `scripts/demo.sh`):
 
-```json
-{
-  "trace_id": "trace_demo_refund",
-  "agent_run_id": "run_001",
-  "source": "demo",
-  "status": "open",
-  "events": [
-    {
-      "sequence": 1,
-      "event_type": "tool_call",
-      "tool_name": "customer_lookup",
-      "status_code": 200,
-      "latency_ms": 80
-    },
-    {
-      "sequence": 2,
-      "event_type": "tool_call",
-      "tool_name": "order_lookup",
-      "status_code": 200,
-      "latency_ms": 95
-    }
-  ]
-}
+```text
+status:     failed
+first fail: span_1
+steps:
+  - #1 span_1: failed (timeout)
+  - #2 span_2: failed (malformed_json)
 ```
-
-A replay walkthrough GIF will go here once the worker and failure injection paths are wired up.
 
 ## Final Thoughts
 
-This is still a work in progress. The target use case is debugging agent failures, for example, a refund support trace where `refund_policy` times out, a retry returns malformed JSON, and the workflow fails downstream. Once replay is wired up, the goal is to reproduce that first failing dependency step on demand.
+I built this to practice event-driven backends with Kafka and a honest mock-based take on replaying agent tool-call failures. The demo path reproduces a refund-style failure under controlled injection — not full LLM determinism.
 
 See [docs/LIMITATIONS.md](docs/LIMITATIONS.md) for what the platform does not do.
 

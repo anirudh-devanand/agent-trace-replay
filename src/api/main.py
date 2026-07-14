@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from sqlalchemy import text
 
+from api.routes.replays import router as replays_router
 from api.routes.traces import router as traces_router
 from shared.config import get_settings
 from shared.db.session import engine
@@ -31,6 +32,7 @@ app = FastAPI(
 )
 
 app.include_router(traces_router)
+app.include_router(replays_router)
 
 
 @app.get("/health")
