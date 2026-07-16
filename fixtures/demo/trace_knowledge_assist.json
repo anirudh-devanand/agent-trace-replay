@@ -1,0 +1,88 @@
+{
+  "trace_id": "trace_demo_knowledge_assist",
+  "agent_run_id": "run_kb_4410",
+  "source": "knowledge_agent",
+  "events": [
+    {
+      "span_id": "kb_01_embed",
+      "parent_span_id": null,
+      "sequence": 1,
+      "event_type": "tool_call",
+      "service_name": "embeddings",
+      "tool_name": "embed_query",
+      "latency_ms": 120,
+      "status_code": 200,
+      "redacted_payload": { "dim": 768 },
+      "idempotency_key": "trace_demo_knowledge_assist:1:embed",
+      "event_ts": "2026-05-03T09:00:00.000Z"
+    },
+    {
+      "span_id": "kb_02_search",
+      "parent_span_id": "kb_01_embed",
+      "sequence": 2,
+      "event_type": "http_request",
+      "service_name": "vector_db",
+      "method": "POST",
+      "path": "/v1/search",
+      "latency_ms": 95,
+      "status_code": 200,
+      "redacted_payload": { "top_k": 5, "hits": 5 },
+      "idempotency_key": "trace_demo_knowledge_assist:2:search",
+      "event_ts": "2026-05-03T09:00:00.150Z"
+    },
+    {
+      "span_id": "kb_03_rank",
+      "parent_span_id": "kb_02_search",
+      "sequence": 3,
+      "event_type": "tool_call",
+      "service_name": "retrieval",
+      "tool_name": "rerank_docs",
+      "latency_ms": 210,
+      "status_code": 200,
+      "redacted_payload": { "kept": 3 },
+      "idempotency_key": "trace_demo_knowledge_assist:3:rerank",
+      "event_ts": "2026-05-03T09:00:00.380Z"
+    },
+    {
+      "span_id": "kb_04_slow_doc",
+      "parent_span_id": "kb_03_rank",
+      "sequence": 4,
+      "event_type": "http_request",
+      "service_name": "docs",
+      "method": "GET",
+      "path": "/v1/articles/a-882",
+      "latency_ms": 850,
+      "status_code": 200,
+      "redacted_payload": { "article_id": "a-882", "chars": 4200 },
+      "idempotency_key": "trace_demo_knowledge_assist:4:doc",
+      "event_ts": "2026-05-03T09:00:01.250Z"
+    },
+    {
+      "span_id": "kb_05_cite",
+      "parent_span_id": "kb_04_slow_doc",
+      "sequence": 5,
+      "event_type": "tool_call",
+      "service_name": "answer",
+      "tool_name": "build_citations",
+      "latency_ms": 70,
+      "status_code": 200,
+      "redacted_payload": { "citations": 3 },
+      "idempotency_key": "trace_demo_knowledge_assist:5:cite",
+      "event_ts": "2026-05-03T09:00:01.340Z"
+    },
+    {
+      "span_id": "kb_06_log",
+      "parent_span_id": "kb_05_cite",
+      "sequence": 6,
+      "event_type": "http_request",
+      "service_name": "telemetry",
+      "method": "POST",
+      "path": "/v1/events",
+      "latency_ms": 30,
+      "status_code": 202,
+      "redacted_payload": { "event": "answer_ready" },
+      "idempotency_key": "trace_demo_knowledge_assist:6:log",
+      "event_ts": "2026-05-03T09:00:01.400Z"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 {
   "annotations": { "list": [] },
+  "description": "Beginner-friendly view of the Agent Trace Replay platform. A trace is a recording of what an AI agent did (tool calls and HTTP requests). A replay re-runs that recording under controlled conditions, optionally injecting fake failures.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -7,49 +8,247 @@
   "links": [],
   "panels": [
     {
-      "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
-      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 0 },
+      "type": "text",
+      "id": 100,
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 0 },
+      "title": "What am I looking at?",
+      "options": {
+        "mode": "markdown",
+        "content": "## Agent Trace Replay — how to read this board\n\nThis platform helps you **re-run what an AI agent did**, so you can debug flaky tool calls without guessing from logs alone.\n\n### Plain-language glossary\n| Term | Meaning |\n|------|---------|\n| **Trace** | A recording of one agent run: each tool call / HTTP request in order |\n| **Manifest** | A cleaned checklist of steps the platform will replay |\n| **Replay** | Re-running that checklist with mock dependencies |\n| **Step** | One item in the checklist (for example `customer_lookup`) |\n| **Failure injection** | Intentionally faking a bad outcome (timeout, HTTP 500, malformed JSON, slow response) during replay |\n\n### How work flows (left → right)\n1. **Traces arrive** — agent recordings are uploaded to the API  \n2. **Steps are prepared** — the normalizer turns each trace into a replay checklist  \n3. **Replays run** — a worker walks each step and records pass/fail  \n4. **You inspect outcomes** — charts below show volume, pass/fail, and injected failure types  \n\n**Tip:** After `./scripts/demo.ps1` (or `bash scripts/demo.sh`), wait ~30 seconds, then refresh. Numbers climb as ingest + replay traffic lands in Prometheus."
+      }
+    },
+    {
+      "type": "stat",
       "id": 1,
+      "title": "Traces received",
+      "description": "How many agent recordings were successfully accepted by the ingest API. Higher means more demo or production traffic was loaded.",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "auto",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(trace_ingestion_total{status=\"success\"}) or vector(0)",
+          "legendFormat": "traces",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "id": 2,
+      "title": "Checklists built",
+      "description": "Number of replay manifests compiled. Each successful normalize turns one trace into an ordered checklist of steps.",
+      "gridPos": { "h": 4, "w": 5, "x": 4, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "purple", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(normalizer_manifests_total) or vector(0)",
+          "legendFormat": "manifests",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "id": 3,
+      "title": "Replays finished",
+      "description": "Total completed or failed replay jobs. A finished replay means every checklist step was attempted.",
+      "gridPos": { "h": 4, "w": 5, "x": 9, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(replay_jobs_total) or vector(0)",
+          "legendFormat": "replays",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "id": 4,
+      "title": "Steps that passed",
+      "description": "Individual checklist items that behaved as expected during mock replay (no forced failure, or recorded happy path).",
+      "gridPos": { "h": 4, "w": 5, "x": 14, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(replay_steps_total{status=\"passed\"}) or vector(0)",
+          "legendFormat": "passed",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "id": 5,
+      "title": "Steps that failed",
+      "description": "Checklist items that failed — often because failure injection forced a timeout, HTTP 500, bad JSON, or slow response.",
+      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 9 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "orange", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(replay_steps_total{status=\"failed\"}) or vector(0)",
+          "legendFormat": "failed",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 6,
+      "title": "1) Are agent recordings arriving?",
+      "description": "Shows how quickly traces are accepted by the API. Spikes usually mean someone ran the demo script or uploaded a batch of agent runs. 'success' is good; 'error' means ingest failed validation or infrastructure issues.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "fillOpacity": 15, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
       "targets": [
         {
           "expr": "sum(rate(trace_ingestion_total[1m])) by (status)",
           "legendFormat": "ingest {{status}}",
           "refId": "A"
         }
-      ],
-      "title": "Trace Ingest Rate",
-      "type": "timeseries"
+      ]
     },
     {
+      "type": "timeseries",
+      "id": 7,
+      "title": "2) Are checklists being prepared?",
+      "description": "After a trace is saved, a background service builds a replay checklist (manifest). 'success' means a checklist was written. 'retry' means the events were not ready yet and the service will try again.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
       "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
-      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 0 },
-      "id": 2,
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "fillOpacity": 15, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
       "targets": [
         {
           "expr": "sum(rate(normalizer_messages_total[1m])) by (status)",
-          "legendFormat": "normalizer {{status}}",
+          "legendFormat": "prepare {{status}}",
           "refId": "A"
         },
         {
           "expr": "sum(rate(normalizer_manifests_total[1m]))",
-          "legendFormat": "manifests",
+          "legendFormat": "checklists written",
           "refId": "B"
         }
-      ],
-      "title": "Normalizer Throughput",
-      "type": "timeseries"
+      ]
     },
     {
+      "type": "timeseries",
+      "id": 8,
+      "title": "3) Are replays starting and finishing?",
+      "description": "Create lines show API requests to start a replay. Finished lines show worker outcomes: completed = all steps passed; failed = at least one step failed (often from injected faults).",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
       "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
-      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 0 },
-      "id": 3,
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "custom": { "fillOpacity": 15, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
       "targets": [
         {
           "expr": "sum(rate(replay_create_total[1m])) by (status)",
-          "legendFormat": "create {{status}}",
+          "legendFormat": "start {{status}}",
           "refId": "A"
         },
         {
@@ -57,106 +256,126 @@
           "legendFormat": "finished {{status}}",
           "refId": "B"
         }
-      ],
-      "title": "Replay Jobs",
-      "type": "timeseries"
+      ]
     },
     {
+      "type": "timeseries",
+      "id": 9,
+      "title": "4) Did each tool step pass or fail?",
+      "description": "Each checklist item is one step. Passed means the mock call behaved as expected. Failed means the step hit an error — frequently because we injected a fake failure on purpose.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
       "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 7 },
-      "id": 4,
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "fillOpacity": 20, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
       "targets": [
         {
           "expr": "sum(replay_steps_total) by (status)",
-          "legendFormat": "{{status}}",
+          "legendFormat": "steps {{status}}",
           "refId": "A"
         }
-      ],
-      "title": "Replay Steps by Status",
-      "type": "timeseries"
+      ]
     },
     {
+      "type": "timeseries",
+      "id": 10,
+      "title": "5) What kinds of fake failures did we inject?",
+      "description": "Failure injection lets you reproduce intermittent production bugs safely. timeout = call never returns in time; http_500 = server error; malformed_json = unreadable body; slow = unexpectedly slow response.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
       "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 7 },
-      "id": 5,
+      "fieldConfig": {
+        "defaults": { "unit": "short", "custom": { "fillOpacity": 25, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
       "targets": [
         {
           "expr": "sum(replay_injections_total) by (kind)",
           "legendFormat": "{{kind}}",
           "refId": "A"
         }
-      ],
-      "title": "Failure Injections by Kind",
-      "type": "timeseries"
+      ]
     },
     {
+      "type": "timeseries",
+      "id": 11,
+      "title": "6) How long do mock tool calls take?",
+      "description": "Latency of individual mock steps during replay. p50 is a typical step; p95 is a slower outlier. Useful for noticing when 'slow' injection or retry storms stretch step times.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 29 },
       "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
-      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 7 },
-      "id": 6,
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "custom": { "fillOpacity": 10, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
       "targets": [
         {
           "expr": "histogram_quantile(0.50, sum(rate(replay_step_latency_milliseconds_bucket[5m])) by (le))",
-          "legendFormat": "p50",
+          "legendFormat": "typical step (p50)",
           "refId": "A"
         },
         {
           "expr": "histogram_quantile(0.95, sum(rate(replay_step_latency_milliseconds_bucket[5m])) by (le))",
-          "legendFormat": "p95",
+          "legendFormat": "slow step (p95)",
           "refId": "B"
         }
-      ],
-      "title": "Replay Step Latency",
-      "type": "timeseries"
+      ]
     },
     {
+      "type": "timeseries",
+      "id": 12,
+      "title": "7) How long does a full replay take end-to-end?",
+      "description": "Wall-clock time from claiming a replay job until the last step finishes. Longer bars mean larger checklists or injected delays.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 37 },
       "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
-      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 14 },
-      "id": 7,
+      "fieldConfig": {
+        "defaults": { "unit": "s", "custom": { "fillOpacity": 15, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single" }
+      },
       "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(replay_job_duration_seconds_bucket[5m])) by (le))",
+          "legendFormat": "typical replay (p50)",
+          "refId": "A"
+        },
         {
           "expr": "histogram_quantile(0.95, sum(rate(replay_job_duration_seconds_bucket[5m])) by (le))",
-          "legendFormat": "p95 duration",
-          "refId": "A"
+          "legendFormat": "slow replay (p95)",
+          "refId": "B"
         }
-      ],
-      "title": "Replay Job Duration (p95)",
-      "type": "timeseries"
+      ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "Prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 14 },
-      "id": 8,
-      "targets": [
-        {
-          "expr": "sum(http_requests_total)",
-          "legendFormat": "api http total",
-          "refId": "A"
-        },
-        {
-          "expr": "sum(trace_ingestion_duplicates_total)",
-          "legendFormat": "ingest duplicates",
-          "refId": "B"
-        },
-        {
-          "expr": "sum(normalizer_manifest_steps_total)",
-          "legendFormat": "manifest steps",
-          "refId": "C"
-        }
-      ],
-      "title": "Counters Snapshot",
-      "type": "timeseries"
+      "type": "text",
+      "id": 101,
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 45 },
+      "title": "What to do next",
+      "options": {
+        "mode": "markdown",
+        "content": "### Try this\n1. Run `./scripts/demo.ps1` (Windows) or `bash scripts/demo.sh` (Linux/macOS) with Compose up  \n2. Come back here and watch the **top counters** move  \n3. Open a replay detail in the API: `GET /v1/replays/?limit=5` then `GET /v1/replays/{replay_id}`  \n4. Hover the **i** icon on any panel for a deeper description  \n\nNumbers here are **totals since the services started**. Restarting Docker resets counters."
+      }
     }
   ],
   "schemaVersion": 39,
-  "tags": ["agent-trace-replay"],
+  "tags": ["agent-trace-replay", "demo", "beginner"],
   "templating": { "list": [] },
-  "time": { "from": "now-15m", "to": "now" },
-  "title": "Agent Trace Replay — Overview",
+  "time": { "from": "now-30m", "to": "now" },
+  "title": "Agent Trace Replay — How to read the platform",
   "uid": "agent-trace-replay-overview",
-  "version": 2
+  "version": 3
 }

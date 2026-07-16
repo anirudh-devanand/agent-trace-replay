@@ -4,7 +4,7 @@ This document describes what the platform does **not** do and what is intentiona
 
 ## Replay model
 
-- **Mock dependency replay only.** Steps replay recorded tool-call metadata and synthetic stubs — not live LLM inference. Re-running an agent end-to-end with deterministic model output is out of scope.
+- **Mock dependency replay only.** Steps replay recorded tool-call metadata and synthetic stubs - not live LLM inference. Re-running an agent end-to-end with deterministic model output is out of scope.
 - **Synthetic failure injection.** Supported kinds are `timeout`, `http_500`, `malformed_json`, and `slow`. These are local mock behaviors inside the worker, not calls to real downstream services.
 - **No full payload capture.** Traces store the fields needed for manifests and debugging; arbitrary binary or PII-heavy payloads are not retained.
 

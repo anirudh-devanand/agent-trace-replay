@@ -1,0 +1,113 @@
+{
+  "trace_id": "trace_demo_checkout",
+  "agent_run_id": "run_checkout_2204",
+  "source": "shopping_agent",
+  "events": [
+    {
+      "span_id": "chk_01_catalog",
+      "parent_span_id": null,
+      "sequence": 1,
+      "event_type": "tool_call",
+      "service_name": "catalog",
+      "tool_name": "search_products",
+      "latency_ms": 75,
+      "status_code": 200,
+      "redacted_payload": { "query": "wireless earbuds", "hits": 12 },
+      "idempotency_key": "trace_demo_checkout:1:search",
+      "event_ts": "2026-05-02T10:15:00.000Z"
+    },
+    {
+      "span_id": "chk_02_inventory",
+      "parent_span_id": "chk_01_catalog",
+      "sequence": 2,
+      "event_type": "http_request",
+      "service_name": "inventory",
+      "method": "GET",
+      "path": "/v1/sku/EB-200/stock",
+      "latency_ms": 55,
+      "status_code": 200,
+      "redacted_payload": { "sku": "EB-200", "available": 84 },
+      "idempotency_key": "trace_demo_checkout:2:stock",
+      "event_ts": "2026-05-02T10:15:00.100Z"
+    },
+    {
+      "span_id": "chk_03_price",
+      "parent_span_id": "chk_02_inventory",
+      "sequence": 3,
+      "event_type": "tool_call",
+      "service_name": "pricing",
+      "tool_name": "get_price",
+      "latency_ms": 40,
+      "status_code": 200,
+      "redacted_payload": { "sku": "EB-200", "price_cents": 7999 },
+      "idempotency_key": "trace_demo_checkout:3:price",
+      "event_ts": "2026-05-02T10:15:00.180Z"
+    },
+    {
+      "span_id": "chk_04_cart",
+      "parent_span_id": "chk_03_price",
+      "sequence": 4,
+      "event_type": "tool_call",
+      "service_name": "cart",
+      "tool_name": "add_to_cart",
+      "latency_ms": 60,
+      "status_code": 200,
+      "redacted_payload": { "cart_id": "cart_88", "qty": 1 },
+      "idempotency_key": "trace_demo_checkout:4:cart",
+      "event_ts": "2026-05-02T10:15:00.260Z"
+    },
+    {
+      "span_id": "chk_05_ship",
+      "parent_span_id": "chk_04_cart",
+      "sequence": 5,
+      "event_type": "tool_call",
+      "service_name": "shipping",
+      "tool_name": "estimate_shipping",
+      "latency_ms": 130,
+      "status_code": 200,
+      "redacted_payload": { "method": "standard", "days": 4, "fee_cents": 599 },
+      "idempotency_key": "trace_demo_checkout:5:ship",
+      "event_ts": "2026-05-02T10:15:00.400Z"
+    },
+    {
+      "span_id": "chk_06_tax",
+      "parent_span_id": "chk_05_ship",
+      "sequence": 6,
+      "event_type": "http_request",
+      "service_name": "tax",
+      "method": "POST",
+      "path": "/v1/tax/quote",
+      "latency_ms": 90,
+      "status_code": 200,
+      "redacted_payload": { "tax_cents": 680 },
+      "idempotency_key": "trace_demo_checkout:6:tax",
+      "event_ts": "2026-05-02T10:15:00.500Z"
+    },
+    {
+      "span_id": "chk_07_pay",
+      "parent_span_id": "chk_06_tax",
+      "sequence": 7,
+      "event_type": "tool_call",
+      "service_name": "payments",
+      "tool_name": "charge_card",
+      "latency_ms": 180,
+      "status_code": 200,
+      "redacted_payload": { "payment_id": "pay_441", "ok": true },
+      "idempotency_key": "trace_demo_checkout:7:pay",
+      "event_ts": "2026-05-02T10:15:00.700Z"
+    },
+    {
+      "span_id": "chk_08_order",
+      "parent_span_id": "chk_07_pay",
+      "sequence": 8,
+      "event_type": "tool_call",
+      "service_name": "orders",
+      "tool_name": "create_order",
+      "latency_ms": 100,
+      "status_code": 201,
+      "redacted_payload": { "order_id": "ord_99012" },
+      "idempotency_key": "trace_demo_checkout:8:order",
+      "event_ts": "2026-05-02T10:15:00.820Z"
+    }
+  ]
+}

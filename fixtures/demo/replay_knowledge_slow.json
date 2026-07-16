@@ -1,0 +1,7 @@
+{
+  "trace_id": "trace_demo_knowledge_assist",
+  "failure_injection": true,
+  "injections": [
+    { "kind": "slow", "step_id": "kb_04_slow_doc", "delay_ms": 80 }
+  ]
+}

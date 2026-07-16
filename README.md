@@ -8,12 +8,12 @@ When AI agent workflows fail in production, logs show what happened but make it 
 
 This project uses a number of open-source tools:
 
-- [FastAPI] — REST API and Prometheus metrics endpoint
-- [PostgreSQL] — trace and replay persistence
-- [Apache Kafka] — event pipeline between services
-- [Prometheus] — metrics collection
-- [Grafana] — dashboards
-- [Docker Compose] — local multi-service stack
+- [FastAPI] - REST API and Prometheus metrics endpoint
+- [PostgreSQL] - trace and replay persistence
+- [Apache Kafka] - event pipeline between services
+- [Prometheus] - metrics collection
+- [Grafana] - dashboards
+- [Docker Compose] - local multi-service stack
 
 ## Architecture
 
@@ -58,7 +58,7 @@ docker compose up --build
 
 ## Demo
 
-With the stack running:
+With the stack running, load three multi-step agent scenarios (refund support, checkout, knowledge assist) and run clean + failure-injection replays:
 
 ```sh
 # Linux / macOS / Git Bash
@@ -68,7 +68,9 @@ bash scripts/demo.sh
 ./scripts/demo.ps1
 ```
 
-The demo ingests `fixtures/sample_ingest.json`, waits for normalization, then runs the failure-injection path from `fixtures/sample_replay_inject.json` (`timeout` on step 1, `malformed_json` on step 2).
+Demo fixtures live under `fixtures/demo/` (10-step refund path, 8-step checkout, 6-step knowledge assist).
+
+Then open Grafana at http://localhost:3000 (`admin` / `admin`) and look for **Agent Trace Replay - How to read the platform**. The top of that dashboard explains traces, replays, steps, and each chart in plain language.
 
 ## Usage
 
@@ -121,7 +123,7 @@ curl "http://localhost:8000/v1/replays/?limit=10"
 curl "http://localhost:8000/v1/traces/trace_demo_refund/replays"
 ```
 
-Open Grafana at http://localhost:3000 (`admin` / `admin`) and open **Agent Trace Replay — Overview**.
+Open Grafana at http://localhost:3000 (`admin` / `admin`) and open **Agent Trace Replay - How to read the platform** (glossary + chart explanations are on the dashboard itself).
 
 ## Tests
 
@@ -161,7 +163,7 @@ steps:
 
 ## Final Thoughts
 
-I built this to practice event-driven backends with Kafka and a honest mock-based take on replaying agent tool-call failures. The demo path reproduces a refund-style failure under controlled injection — not full LLM determinism.
+I built this to practice event-driven backends with Kafka and a honest mock-based take on replaying agent tool-call failures. The demo path reproduces a refund-style failure under controlled injection - not full LLM determinism.
 
 See [docs/LIMITATIONS.md](docs/LIMITATIONS.md) for what the platform does not do.
 

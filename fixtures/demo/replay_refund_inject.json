@@ -1,0 +1,9 @@
+{
+  "trace_id": "trace_demo_refund_support",
+  "failure_injection": true,
+  "injections": [
+    { "kind": "timeout", "step_id": "span_05_policy_timeout", "delay_ms": 40 },
+    { "kind": "malformed_json", "step_id": "span_07_policy_retry_call" },
+    { "kind": "http_500", "step_id": "span_08_payment" }
+  ]
+}
